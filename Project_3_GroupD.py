@@ -5,7 +5,7 @@
 # The goal of this analysis will be to detect global atmospheric circulation patterns (or teleconnections) 
 # associated with extreme daily precipitation in a certain part of the globe. 
 
-# Created by Puja Roy, Joyce Yang and Zhang Jun. 
+# Created by Puja Roy, Joyce Yang and Jun Zhang. 
 
 #################################################################################
 
