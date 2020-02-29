@@ -119,6 +119,486 @@ plt.legend(loc='best',fontsize=14)
 plt.savefig('/content/gdrive/My Drive/ATMS_597_Project_3_Group_D/CDF_Rainfall_Hilo.png',dpi=500)
 plt.show()
 
+
+!pip install pydap
+!pip install netcdf4
+
+!apt-get -qq install libproj-dev proj-data proj-bin libgeos-dev
+!pip install Cython
+!pip install --upgrade --force-reinstall shapely --no-binary shapely
+!pip install cartopy
+
+%pylab inline
+import pandas as pd
+import xarray as xr
+
+#  reading extreme precipitation dates
+precip_data = pd.read_csv("/content/drive/My Drive/Xtreme_Precip_days_Hilo.csv")
+
+# extract data fields on extreme precipitation days
+years = pd.date_range(start='1996-01-01', end='2019-12-31', freq='D')
+yearmon = years[(years.month==10) | (years.month==11) | (years.month==12)]
+
+windv_250_ds = []
+windu_250_ds = []
+windv_500_ds = []
+windu_500_ds = []
+hgt_500_ds = []
+windv_850_ds = []
+windu_850_ds = []
+temp_850_ds = []
+shum_850_ds = []
+sktemp_ds = []
+surf_windu_ds = []
+surf_windv_ds = []
+pr_wtr_ds = []
+
+years = [i for i in range(1996,2020)]
+
+
+for iyr in years:
+    print('working on '+str(iyr))
+    if len(precip_data['time'][pd.DatetimeIndex(precip_data['time']).year.values == iyr])>0:
+      dates_year = pd.to_datetime(np.array(precip_data['time'][pd.DatetimeIndex(precip_data['time']).year.values == iyr]))
+
+      windu_250 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/uwnd.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=250,time=dates_year)
+      windu_250_ds.append(windu_250)
+
+      windv_250 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/vwnd.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=250,time=dates_year)
+      windv_250_ds.append(windv_250)
+
+      windu_500 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/uwnd.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=500,time=dates_year)
+      windu_500_ds.append(windu_500)
+
+      windv_500 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/vwnd.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=500,time=dates_year)
+      windv_500_ds.append(windv_500)
+
+      hgt_500 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/hgt.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=500,time=dates_year)
+      hgt_500_ds.append(hgt_500)
+
+      temp_850 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/air.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=850,time=dates_year)
+      temp_850_ds.append(temp_850)
+
+      shum_850 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/shum.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=850,time=dates_year)
+      shum_850_ds.append(shum_850)
+
+      windu_850 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/uwnd.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=850,time=dates_year)
+      windu_850_ds.append(windu_850)
+
+      windv_850 = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/pressure/vwnd.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(level=850,time=dates_year)
+      windv_850_ds.append(windv_850)
+
+      sktemp = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/surface_gauss/skt.sfc.gauss.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(time=dates_year)
+      sktemp_ds.append(sktemp)
+
+      surf_windu = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/surface/uwnd.sig995.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(time=dates_year)
+      surf_windu_ds.append(surf_windu)
+
+      surf_windv = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/surface/vwnd.sig995.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(time=dates_year)
+      surf_windv_ds.append(surf_windv)
+
+      pr_wtr = xr.open_dataset('https://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/surface/pr_wtr.eatm.'+str(iyr)+'.nc',
+                          engine='netcdf4').sel(time=dates_year)
+      pr_wtr_ds.append(pr_wtr)
+
+# combine each dataset fields relative to years
+windu_250_ds_yearcombined = xr.concat(windu_250_ds, dim='time')
+windu_250_ds_yearcombined
+
+windv_250_ds_yearcombined = xr.concat(windv_250_ds, dim='time')
+windv_250_ds_yearcombined
+
+hgt_500_ds_yearcombined = xr.concat(hgt_500_ds, dim='time')
+hgt_500_ds_yearcombined
+
+windu_500_ds_yearcombined = xr.concat(windu_500_ds, dim='time')
+windu_500_ds_yearcombined
+
+windv_500_ds_yearcombined = xr.concat(windv_500_ds, dim='time')
+windv_500_ds_yearcombined
+
+windu_850_ds_yearcombined = xr.concat(windu_850_ds, dim='time')
+windu_850_ds_yearcombined
+
+windv_850_ds_yearcombined = xr.concat(windv_850_ds, dim='time')
+windv_850_ds_yearcombined
+
+temp_850_ds_yearcombined = xr.concat(temp_850_ds, dim='time')
+temp_850_ds_yearcombined
+
+shum_850_ds_yearcombined = xr.concat(shum_850_ds, dim='time')
+shum_850_ds_yearcombined
+
+sktemp_ds_yearcombined = xr.concat(sktemp_ds, dim='time')
+sktemp_ds_yearcombined
+
+surf_windu_ds_yearcombined = xr.concat(surf_windu_ds, dim='time')
+surf_windu_ds_yearcombined
+
+surf_windv_ds_yearcombined = xr.concat(surf_windv_ds, dim='time')
+surf_windv_ds_yearcombined
+
+pr_wtr_ds_yearcombined = xr.concat(pr_wtr_ds, dim='time')
+pr_wtr_ds_yearcombined
+
+# save dataset fields on extreme precipitation days to netcdf files
+pr_wtr_ds_yearcombined.to_netcdf('pr_wtr_ds_yearcombined_extrem.nc')
+surf_windv_ds_yearcombined.to_netcdf('surf_windv_ds_yearcombined_extrem.nc')
+surf_windu_ds_yearcombined.to_netcdf('surf_windu_ds_yearcombined_extrem.nc')
+sktemp_ds_yearcombined.to_netcdf('sktemp_ds_yearcombined_extrem.nc')
+shum_850_ds_yearcombined.to_netcdf('shum_850_ds_yearcombined_extrem.nc')
+temp_850_ds_yearcombined.to_netcdf('temp_850_ds_yearcombined_extrem.nc') 
+windv_850_ds_yearcombined.to_netcdf('windv_850_ds_yearcombined_extrem.nc')
+windu_850_ds_yearcombined.to_netcdf('windu_850_ds_yearcombined_extrem.nc')
+windv_500_ds_yearcombined.to_netcdf('windv_500_ds_yearcombined_extrem.nc')
+windu_500_ds_yearcombined.to_netcdf('windu_500_ds_yearcombined_extrem.nc')
+hgt_500_ds_yearcombined.to_netcdf('hgt_500_ds_yearcombined_extrem.nc')
+windv_250_ds_yearcombined.to_netcdf('windv_250_ds_yearcombined_extrem.nc')
+windu_250_ds_yearcombined.to_netcdf('windu_250_ds_yearcombined_extrem.nc')
+
+!mv *.nc "/content/drive/My Drive/"
+
+# extract precipitable water and plot
+pr_wtr = xr.open_dataset('/content/drive/My Drive/pr_wtr_ds_yearcombined_extrem.nc', engine='netcdf4')
+pr_wtr_avg = pr_wtr.mean(dim='time')
+
+pr_wtr_avg['pr_wtr']
+
+import cartopy.crs as ccrs 
+import matplotlib.pyplot as plt 
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
+
+
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+fig = plt.figure(figsize=(15,10))
+
+ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=180.))
+ax.set_global()
+
+ax.add_feature(cfeature.COASTLINE.with_scale('110m'))
+
+c1 = ax.contourf(pr_wtr_avg['lon'], pr_wtr_avg['lat'], pr_wtr_avg['pr_wtr'],
+             transform=ccrs.PlateCarree(), cmap='BrBG')
+
+ax.plot(205.0, 20.0, 'r*', markersize = 20, transform=ccrs.PlateCarree())
+plt.text(205.0, 20.0,'Hilo',fontsize=20,fontweight='bold',ha='right',va = 'top', color='r',transform=ccrs.PlateCarree())
+g1 = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='-')
+g1.xlocator = mticker.FixedLocator(np.arange(-180,180,30))
+g1.ylocator = mticker.FixedLocator(np.arange(-90,91,30))
+g1.xformatter = LONGITUDE_FORMATTER
+g1.yformatter = LATITUDE_FORMATTER
+g1.xlabel_style = {'size': 12}
+g1.ylabel_style = {'size': 12}
+g1.xlabels_top = False
+g1.ylabels_right = False
+ax.coastlines()
+
+plt.title('Extreme precipitation days: Precipitable Water', fontsize = 30)
+
+cb = fig.colorbar(c1, shrink=0.6)
+cb.ax.tick_params(labelsize = 12)
+cb.set_ticks(np.arange(0, 64, 4))
+cb.set_label('Precipitable Water [mm]', fontsize = 20)
+plt.tight_layout()
+plt.show()
+fig.savefig('pr_wtr.png',dpi=300, bbox_inches='tight')
+
+
+# Extreme precipitation days: 500-hPa Geopotential Height
+hgt = xr.open_dataset('/content/drive/My Drive/hgt_500_ds_yearcombined_extrem.nc', engine='netcdf4')
+uwind = xr.open_dataset('/content/drive/My Drive/windu_500_ds_yearcombined_extrem.nc', engine='netcdf4')
+vwind = xr.open_dataset('/content/drive/My Drive/windv_500_ds_yearcombined_extrem.nc', engine='netcdf4')
+
+
+hgt_avg = hgt.mean(dim='time')
+vwind_avg = vwind.mean(dim='time')
+uwind_avg = uwind.mean(dim='time')
+
+uwind_avg['uwnd']
+
+import cartopy.crs as ccrs 
+import matplotlib.pyplot as plt 
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
+
+
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+fig = plt.figure(figsize=(15,10))
+
+
+ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=180.))
+ax.set_extent([-180, 180, -90, 90])
+
+ax.add_feature(cfeature.COASTLINE.with_scale('110m'))
+c1 = ax.contourf(hgt_avg['lon'], hgt_avg['lat'], hgt_avg['hgt']/10,
+             transform=ccrs.PlateCarree(), levels = np.linspace(450, 600, 16), cmap='viridis')
+
+ax.barbs(uwind_avg.lon[::4].values, uwind_avg.lat[::4].values, uwind_avg['uwnd'][::4, ::4].values, vwind_avg['vwnd'][::4, ::4].values, length=5,
+         sizes=dict(emptybarb=0.25, spacing=0.3, height=0.7),linewidth=0.9)
+ax.plot(205.0, 20.0, 'b*', markersize = 20, transform=ccrs.PlateCarree())
+plt.text(205.0, 20.0,'Hilo',fontsize=20,fontweight='bold',ha='right',va = 'top', color='r',transform=ccrs.PlateCarree())
+g1 = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='-')
+g1.xlocator = mticker.FixedLocator(np.arange(-180,180,30))
+g1.ylocator = mticker.FixedLocator(np.arange(-90,90,30))
+g1.xformatter = LONGITUDE_FORMATTER
+g1.yformatter = LATITUDE_FORMATTER
+g1.xlabel_style = {'size': 12}
+g1.ylabel_style = {'size': 12}
+g1.xlabels_top = False
+g1.ylabels_right = False
+ax.coastlines()
+
+
+plt.title('Extreme precipitation days: 500-hPa Geopotential Height', fontsize = 25)
+cb = fig.colorbar(c1, shrink=0.5)
+cb.ax.tick_params(labelsize = 12)
+cb.set_label('Geopotential Height [dam]', fontsize = 16)
+cb.set_ticks(np.arange(450, 601, 10))
+plt.tight_layout()
+plt.show()
+fig.savefig('hgt_wind_500.png',dpi=300, bbox_inches='tight')
+
+
+# Extreme precipitation days: 250-hPa Wind
+uwind = xr.open_dataset('/content/drive/My Drive/windu_250_ds_yearcombined_extrem.nc', engine='netcdf4')
+vwind = xr.open_dataset('/content/drive/My Drive/windv_250_ds_yearcombined_extrem.nc', engine='netcdf4')
+
+vwind_avg = vwind.mean(dim='time')
+uwind_avg = uwind.mean(dim='time')
+
+uwind_avg['uwnd']
+
+import cartopy.crs as ccrs 
+import matplotlib.pyplot as plt 
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
+
+
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+fig = plt.figure(figsize=(15,10))
+
+
+ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=180.))
+ax.set_extent([-180, 180, -90, 90])
+
+ax.add_feature(cfeature.COASTLINE.with_scale('110m'))
+wind_speed = np.sqrt(uwind_avg['uwnd']**2 + vwind_avg['vwnd']**2)
+c1 = ax.contourf(uwind_avg.lon, uwind_avg.lat, wind_speed, transform=ccrs.PlateCarree(), levels = 15, cmap='rainbow')
+
+ax.barbs(uwind_avg.lon[::4].values, uwind_avg.lat[::4].values, uwind_avg['uwnd'][::4, ::4].values, vwind_avg['vwnd'][::4, ::4].values, length=5,
+         sizes=dict(emptybarb=0.25, spacing=0.3, height=0.7),linewidth=0.9)
+ax.plot(205.0, 20.0, 'r*', markersize = 20, transform=ccrs.PlateCarree())
+plt.text(205.0, 20.0,'Hilo',fontsize=20,fontweight='bold',ha='right',va = 'top', color='r',transform=ccrs.PlateCarree())
+g1 = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='-')
+g1.xlocator = mticker.FixedLocator(np.arange(-180,180,30))
+g1.ylocator = mticker.FixedLocator(np.arange(-90,90,30))
+g1.xformatter = LONGITUDE_FORMATTER
+g1.yformatter = LATITUDE_FORMATTER
+g1.xlabel_style = {'size': 12}
+g1.ylabel_style = {'size': 12}
+g1.xlabels_top = False
+g1.ylabels_right = False
+ax.coastlines()
+
+
+plt.title('Extreme precipitation days: 250-hPa Wind', fontsize = 30)
+cb = fig.colorbar(c1, shrink=0.6)
+cb.ax.tick_params(labelsize = 12)
+cb.set_label('Wind [m $s^{-1}$]', fontsize = 20)
+plt.tight_layout()
+plt.show()
+fig.savefig('wind_250.png',dpi=300, bbox_inches='tight')
+
+
+# Extreme precipitation days: Specific Humidity [kg/kg]
+uwind = xr.open_dataset('/content/drive/My Drive/windu_850_ds_yearcombined_extrem.nc', engine='netcdf4')
+vwind = xr.open_dataset('/content/drive/My Drive/windv_850_ds_yearcombined_extrem.nc', engine='netcdf4')
+shum = xr.open_dataset('/content/drive/My Drive/shum_850_ds_yearcombined_extrem.nc', engine='netcdf4')
+
+vwind_avg = vwind.mean(dim='time')
+uwind_avg = uwind.mean(dim='time')
+shum_avg = shum.mean(dim='time')
+shum['shum'].attrs
+
+import cartopy.crs as ccrs 
+import matplotlib.pyplot as plt 
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
+
+
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+fig = plt.figure(figsize=(15,10))
+
+
+ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=180.))
+ax.set_extent([-180, 180, -90, 90])
+
+ax.add_feature(cfeature.COASTLINE.with_scale('110m'))
+c1 = ax.contourf(shum_avg['lon'], shum_avg['lat'], shum_avg['shum'],
+             transform=ccrs.PlateCarree(), levels = 10, cmap='Reds')
+
+ax.barbs(uwind_avg.lon[::4].values, uwind_avg.lat[::4].values, uwind_avg['uwnd'][::4, ::4].values, vwind_avg['vwnd'][::4, ::4].values, length=5,
+         sizes=dict(emptybarb=0.25, spacing=0.3, height=0.7),linewidth=0.9)
+ax.plot(205.0, 20.0, 'b*', markersize = 20, transform=ccrs.PlateCarree())
+plt.text(205.0, 20.0,'Hilo',fontsize=20,fontweight='bold',ha='right',va = 'top', color='g',transform=ccrs.PlateCarree())
+g1 = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='-')
+g1.xlocator = mticker.FixedLocator(np.arange(-180,180,30))
+g1.ylocator = mticker.FixedLocator(np.arange(-90,90,30))
+g1.xformatter = LONGITUDE_FORMATTER
+g1.yformatter = LATITUDE_FORMATTER
+g1.xlabel_style = {'size': 14}
+g1.ylabel_style = {'size': 14}
+g1.xlabels_top = False
+g1.ylabels_right = False
+ax.coastlines()
+
+plt.title('850-hPa Specific Humidity', fontsize = 20)
+cb = fig.colorbar(c1, shrink=0.5)
+cb.ax.tick_params(labelsize = 12)
+cb.set_label('Extreme precipitation days: Specific Humidity [kg/kg]', fontsize = 16)
+plt.tight_layout()
+plt.show()
+fig.savefig('shum_850.png')
+
+
+# Extreme precipitation days: 850-hPa Temperature and specific humidity
+uwind = xr.open_dataset('/content/drive/My Drive/windu_850_ds_yearcombined_extrem.nc', engine='netcdf4')
+vwind = xr.open_dataset('/content/drive/My Drive/windv_850_ds_yearcombined_extrem.nc', engine='netcdf4')
+temp = xr.open_dataset('/content/drive/My Drive/temp_850_ds_yearcombined_extrem.nc', engine='netcdf4')
+
+
+vwind_avg = vwind.mean(dim='time')
+uwind_avg = uwind.mean(dim='time')
+temp_avg = temp.mean(dim='time')
+temp_avg['air']
+
+import cartopy.crs as ccrs 
+import matplotlib.pyplot as plt 
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
+
+
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+fig = plt.figure(figsize=(15,10))
+
+
+ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=180.))
+ax.set_extent([-180, 180, -90, 90])
+
+ax.add_feature(cfeature.COASTLINE.with_scale('110m'))
+c1 = ax.contour(temp_avg['lon'], temp_avg['lat'], temp_avg['air']-273.15,
+             transform=ccrs.PlateCarree(), levels = 10, cmap='Reds')
+c2 = ax.contourf(shum_avg['lon'], shum_avg['lat'], shum_avg['shum'],
+             transform=ccrs.PlateCarree(), levels = 10, cmap='rainbow')
+
+ax.barbs(uwind_avg.lon[::4].values, uwind_avg.lat[::4].values, uwind_avg['uwnd'][::4, ::4].values, vwind_avg['vwnd'][::4, ::4].values, length=5,
+         sizes=dict(emptybarb=0.25, spacing=0.3, height=0.7),linewidth=0.9)
+ax.plot(205.0, 20.0, 'b*', markersize = 20, transform=ccrs.PlateCarree())
+plt.text(205.0, 20.0,'Hilo',fontsize=20,fontweight='bold',ha='right',va = 'top', color='r',transform=ccrs.PlateCarree())
+g1 = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='-')
+g1.xlocator = mticker.FixedLocator(np.arange(-180,180,30))
+g1.ylocator = mticker.FixedLocator(np.arange(-90,90,30))
+g1.xformatter = LONGITUDE_FORMATTER
+g1.yformatter = LATITUDE_FORMATTER
+g1.xlabel_style = {'size': 12}
+g1.ylabel_style = {'size': 12}
+g1.xlabels_top = False
+g1.ylabels_right = False
+ax.coastlines()
+
+cb2 = fig.colorbar(c1, shrink=0.6)
+cb2.ax.tick_params(labelsize = 12)
+cb2.set_label('Temperature [C]', fontsize = 16)
+
+plt.title('Extreme precipitation days: 850-hPa Temperature and specific humidity', fontsize = 20)
+cb = fig.colorbar(c2, shrink=0.8, orientation = 'horizontal')
+cb.ax.tick_params(labelsize = 12)
+cb.set_label('Specific Humidity [kg/kg]', fontsize = 16)
+
+plt.tight_layout()
+plt.show()
+fig.savefig('temp_shum_850.png',dpi=300, bbox_inches='tight')
+
+
+
+# Extreme precipitation days: Skin temperature and Surface wind
+surf_uwind = xr.open_dataset('/content/drive/My Drive/surf_windu_ds_yearcombined_extrem.nc', engine='netcdf4')
+surf_vwind = xr.open_dataset('/content/drive/My Drive/surf_windv_ds_yearcombined_extrem.nc', engine='netcdf4')
+stemp = xr.open_dataset('/content/drive/My Drive/sktemp_ds_yearcombined_extrem.nc', engine='netcdf4')
+
+surf_vwind_avg = surf_vwind.mean(dim='time')
+surf_uwind_avg = surf_uwind.mean(dim='time')
+stemp_avg = stemp.mean(dim='time')
+stemp_avg['skt']
+
+import cartopy.crs as ccrs 
+import matplotlib.pyplot as plt 
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
+
+
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+fig = plt.figure(figsize=(15,10))
+
+
+ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=180.))
+ax.set_extent([-180, 180, -90, 90])
+
+ax.add_feature(cfeature.COASTLINE.with_scale('110m'))
+c1 = ax.contourf(stemp_avg['lon'], stemp_avg['lat'], stemp_avg['skt']-273.15,
+             transform=ccrs.PlateCarree(), levels = 10, cmap='seismic')
+
+ax.barbs(surf_uwind_avg.lon[::4].values, surf_uwind_avg.lat[::4].values, surf_uwind_avg['uwnd'][::4, ::4].values, surf_vwind_avg['vwnd'][::4, ::4].values, length=5,
+         sizes=dict(emptybarb=0.25, spacing=0.3, height=0.7),linewidth=0.9)
+ax.plot(205.0, 20.0, 'b*', markersize = 20, transform=ccrs.PlateCarree())
+plt.text(205.0, 20.0,'Hilo',fontsize=20,fontweight='bold',ha='right',va = 'top', color='y',transform=ccrs.PlateCarree())
+g1 = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='-')
+g1.xlocator = mticker.FixedLocator(np.arange(-180,180,30))
+g1.ylocator = mticker.FixedLocator(np.arange(-90,90,30))
+g1.xformatter = LONGITUDE_FORMATTER
+g1.yformatter = LATITUDE_FORMATTER
+g1.xlabel_style = {'size': 12}
+g1.ylabel_style = {'size': 12}
+g1.xlabels_top = False
+g1.ylabels_right = False
+ax.coastlines()
+
+
+plt.title('Extreme precipitation days: Skin temperature and Surface wind', fontsize = 25)
+cb = fig.colorbar(c1, shrink=0.6)
+cb.ax.tick_params(labelsize = 12)
+cb.set_label('Temperature [C]', fontsize = 16)
+cb.set_ticks(np.arange(-48, 40, 4))
+plt.tight_layout()
+plt.show()
+fig.savefig('surface_temp.png',dpi=300, bbox_inches='tight')
+
+
     
 
 
